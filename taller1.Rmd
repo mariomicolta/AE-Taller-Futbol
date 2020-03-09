@@ -72,11 +72,7 @@ Describimos los tipos de variable que contiene la base de datos y definimos la e
 
 
 ```{r estructura}
-
-
 str(datos)
-
-
 ```
 
 En el resultado anterior podemos observar que la base de datos contiene **`r nrow(datos)`** registros y un total de **`r ncol(datos)`** variables.
@@ -102,7 +98,7 @@ Se procede a cambiarlas.
 
 ```{r tiposVariables}
 
-datos$Date <- as.Date(datos$Date)
+datos$Date <- as.Date(datos$Date, "%Y/%m/%d")
 datos$HomeTeam <- as.factor(datos$HomeTeam)
 datos$AwayTeam <- as.factor(datos$AwayTeam)
 datos$FTHG <- as.integer(datos$FTHG)
@@ -240,11 +236,8 @@ datos <- datos %>% mutate(
   FTAG = replace(FTAG, FTAG == 14, 0)
 )
 
-
+datos$FTR <- factor(ifelse(datos$HomeTeam == "Arsenal" & datos$AwayTeam=="Man United", "H", as.character(datos$FTR)))
 ```
-
-
-
 
 
 ### Resultado Final
@@ -286,6 +279,11 @@ datos <- datos %>% mutate(
 ### Transformación de los datos
 ***
 
+```{r}
+sum(datos$FTHG, datos$FTAG)
+```
+
+
 ```{r transformacion}
  
 provisional <- datos%>% mutate(
@@ -307,9 +305,9 @@ provisional <- datos%>% mutate(
   HR = datos$AR,
   AR = datos$HR,
   B365H = datos$B365A,
+  B365A = datos$B365H,
   BWH = datos$BWA,
   BWA = datos$BWH
-  
 )
 
 datos <- rbind(datos, provisional)
@@ -320,9 +318,13 @@ datos %>% arrange(Date)
 datos$FTHG <- as.integer(datos$FTHG)
 datos$FTAG <- as.integer(datos$FTAG)
 
-
 ```
 
+Se valida que se haya transformada la tabla correctamente pues la suma de los goles debe ser 1072
+
+```{r}
+sum(datos$FTAG)
+```
 
 
 
@@ -339,12 +341,51 @@ datos$FTAG <- as.integer(datos$FTAG)
 
 
 ### Creación de nuevas variables
+```{r}
+head(datos)
+```
+
+A continucación se importa el nuevo dataset pero se selecciona solo las siguientes variables adicionales:  
+
+- HTHG = Half Time Home Team Goals
+- HTAG = Half Time Away Team Goals
+- HTR = Half Time Result (H=Home Win, D=Draw, A=Away Win)
+
+```{r}
+new_data= read.csv("aditional-data.csv")
+new_data$Date <- as.Date(new_data$Date, "%d/%m/%Y")
+new_data <- new_data[, c("Date","HomeTeam","AwayTeam", "HTHG", "HTAG", "HTR")]
+head(new_data,20)
+```
+
+Una vez hecho lo anterior, se procede a combinar las nuevas variables a nuestro dataset original:
+
+```{r}
+first_final_data <- merge(x=datos, y=new_data)
 
 
+homeTemp <-new_data$HomeTeam
+awayTemp <-new_data$AwayTeam
+new_data$HomeTeam <- awayTemp
+new_data$AwayTeam <- homeTemp
+second_final_data <- merge(x=datos, y=new_data)
+final_data <- rbind(first_final_data, second_final_data)
+```
 
+Tenemos como resultado lo siguiente:
 
+```{r}
+summary(final_data)
+```
 
+### Borrado de variables
 
+Debido a que el árbitro no debería ser un factor diferenciador, se borra como variable:
+
+```{r}
+final_data <- final_data %>% select(-Referee)
+head(final_data)
+```
 
 
 
