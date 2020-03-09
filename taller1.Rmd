@@ -42,7 +42,7 @@ ___
 ### Carga de datos
 ***
 
-Cargamos los datos utilizando el paquete readxl
+Se cargan los datos utilizando el paquete readxl
 
 
 ```{r loadData, warning=FALSE, message=FALSE}
@@ -68,14 +68,14 @@ head(datos, 10)
 ***
 
 
-Describimos los tipos de variable que contiene la base de datos y definimos la estructura de la misma.
+Se describe los tipos de variable que contiene la base de datos y se define la estructura de la misma.
 
 
 ```{r estructura}
 str(datos)
 ```
 
-En el resultado anterior podemos observar que la base de datos contiene **`r nrow(datos)`** registros y un total de **`r ncol(datos)`** variables.
+En el resultado anterior se puede observar que la base de datos contiene **`r nrow(datos)`** registros y un total de **`r ncol(datos)`** variables.
 
 ### Hallazgos:
 
@@ -94,11 +94,11 @@ En el resultado anterior podemos observar que la base de datos contiene **`r nro
 
 En el paso anterior se observaron variables con un tipo distinto al de su naturaleza.
 
-Se procede a cambiarlas.
+Se procede a cambiarlas:
 
 ```{r tiposVariables}
 
-datos$Date <- as.Date(datos$Date, "%Y/%m/%d")
+datos$Date <- as.Date(datos$Date)
 datos$HomeTeam <- as.factor(datos$HomeTeam)
 datos$AwayTeam <- as.factor(datos$AwayTeam)
 datos$FTHG <- as.integer(datos$FTHG)
@@ -120,8 +120,13 @@ datos$AR <- as.integer(datos$AR)
 
 ```
 
+```{r}
+head(datos)
+```
 
-Verificamos nuevamente los tipos de variable
+
+Se verifica nuevamente los tipos de variable
+
 ```{r}
 sapply(datos, class)
 
@@ -189,7 +194,7 @@ datos <- datos %>% mutate(
 datos %>% count(FTHG)
 
 ```
-Identificamos un valor nulo en los goles marcados por el equipo local. Además se observan posibles datos atípicos.
+Se puede observar en la tabla anterior un valor nulo en los goles marcados por el equipo local. Además se observan posibles datos atípicos.
 
 ```{r}
 
@@ -251,17 +256,15 @@ datos %>% count(FTR)
 
 ```
 
-Observamos que existen dos variables con errores de digitación.
+Se puede observar que existen dos variables con errores de digitación.
 
-Se procede a actualizarlas.
+Se procede a arreglarlas:
 
 ```{r}
 datos <- datos %>% mutate(
   FTR = replace(FTR, FTR == 'd', 'D'),
   FTR = replace(FTR, FTR == 'h', 'H'),
 )
-
-
 ```
 
 
@@ -279,10 +282,12 @@ datos <- datos %>% mutate(
 ### Transformación de los datos
 ***
 
+Como se puede observar a continuación, la suma de goles de visitante y casa deven ser: 
 ```{r}
 sum(datos$FTHG, datos$FTAG)
 ```
 
+A continuación, para tener información más precisa de cada equipo siendo, se hace lo siguiente:
 
 ```{r transformacion}
  
@@ -380,12 +385,26 @@ summary(final_data)
 
 ### Borrado de variables
 
-Debido a que el árbitro no debería ser un factor diferenciador, se borra como variable:
+Debido a que el árbitro no debería ser un factor diferenciador, se borra como variable. Lo mismo con div pues todas tienen las mismas divisiones:
 
 ```{r}
-final_data <- final_data %>% select(-Referee)
-head(final_data)
+final_data <- final_data %>% select(-c(Referee, Div))
 ```
 
 
+### Renombremiento de columnas
 
+Se renombre las siguientes columnas pues su significado cambia después de la transformación:
+
+```{r}
+names(final_data)[names(final_data) == "HomeTeam"] <- "Team"
+names(final_data)[names(final_data) == "AwayTeam"] <- "Rival"
+```
+
+
+El resultado final es el siguiente:
+```{r}
+head(final_data)
+str(final_data)
+summary(final_data)
+```
